@@ -27,8 +27,8 @@ export function Footer() {
 
             <div className="flex items-center gap-4">
               {[
-                { href: "https://instagram.com", Icon: Instagram, label: "Instagram" },
-                { href: "https://linkedin.com", Icon: Linkedin, label: "LinkedIn" },
+                { href: "https://www.instagram.com/product.gt/", Icon: Instagram, label: "Instagram" },
+                { href: "https://www.linkedin.com/company/productgt/", Icon: Linkedin, label: "LinkedIn" },
                 { href: "mailto:gatechproductmanagement@gmail.com", Icon: Mail, label: "Email" },
               ].map(({ href, Icon, label }) => (
                 <Link
@@ -45,7 +45,7 @@ export function Footer() {
 
               {/* Slack */}
               <Link
-                href="https://slack.com"
+                href="https://productgt.slack.com/signup"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-white/10 text-white/70 backdrop-blur-sm transition-all duration-300 hover:bg-white/20 hover:text-white hover:border-white/40 hover:scale-110 hover:shadow-[0_0_12px_rgba(255,255,255,0.15)]"
@@ -58,7 +58,7 @@ export function Footer() {
 
               {/* GroupMe */}
               <Link
-                href="https://groupme.com"
+                href="https://groupme.com/join_group/71836797/AJf13HBy"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-white/10 backdrop-blur-sm transition-all duration-300 hover:bg-white/20 hover:border-white/40 hover:scale-110 hover:shadow-[0_0_12px_rgba(255,255,255,0.15)]"

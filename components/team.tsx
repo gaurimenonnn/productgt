@@ -31,7 +31,7 @@ const teamMembers = [
     name: "Claire Lee",
     role: "Vice President",
     major: "Computer Science",
-    image: "/claireshot.png",
+    image: "/Claire.jpeg",
     linkedin: "https://www.linkedin.com/in/clxire-lee/",
   },
   {
