@@ -116,8 +116,8 @@ export function FloatingPieces() {
         const half = cfg.size * sizeScale / 2
         const friction = isMobile ? MOB_FRICTION : cfg.friction
 
-        // ── Scroll inertia ──────────────────────────────────────────
-        s.vy -= scrollVel / cfg.mass
+        // ── Scroll inertia (desktop only) ───────────────────────────
+        if (!isMobile) s.vy -= scrollVel / cfg.mass
 
         if (!isMobile) {
           // ── Mouse interaction (desktop only) ───────────────────────
