@@ -39,6 +39,9 @@ export function FloatingPieces() {
     const container = containerRef.current
     if (!container) return
 
+    const isMobile = window.innerWidth < 768
+    const sizeScale = isMobile ? 0.55 : 1
+
     let W = container.offsetWidth
     let H = container.offsetHeight
 
@@ -56,7 +59,7 @@ export function FloatingPieces() {
     CONFIGS.forEach((cfg, i) => {
       const el = elRefs.current[i]
       if (!el) return
-      const half = cfg.size / 2
+      const half = cfg.size * sizeScale / 2
       el.style.transform = `translate(${cfg.startX * W - half}px, ${cfg.startY * H - half}px) rotate(${cfg.initialRotation}deg)`
       el.style.opacity = "0.88"
       el.style.transition = "opacity 0.5s ease"
@@ -99,7 +102,7 @@ export function FloatingPieces() {
         const el = elRefs.current[i]
         if (!el) return
         const s = state[i]
-        const half = cfg.size / 2
+        const half = cfg.size * sizeScale / 2
 
         // ── Scroll inertia: scroll down → float up ─────────────────
         s.vy -= scrollVel / cfg.mass
@@ -202,8 +205,8 @@ export function FloatingPieces() {
             position:   "absolute",
             top:        0,
             left:       0,
-            width:      cfg.size,
-            height:     cfg.size,
+            width:      cfg.size * sizeScale,
+            height:     cfg.size * sizeScale,
             opacity:    0,           // physics engine sets this on first frame
             willChange: "transform",
             filter:     cfg.shadow,

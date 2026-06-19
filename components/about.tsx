@@ -126,7 +126,7 @@ export function About() {
           </AnimateOnScroll>
         </div>
 
-        <AnimateOnScroll direction="up" delay={200} className="w-full md:w-1/2">
+        <AnimateOnScroll direction="up" delay={200} className="hidden md:block w-full md:w-1/2">
           <div className="relative mx-auto w-full max-w-lg px-12">
 
             {/* Outer mask wrapper — extends 50px beyond the card stack on each side.

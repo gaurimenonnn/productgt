@@ -36,7 +36,7 @@ export function Sponsors() {
   const doubled = [...partners, ...partners]
 
   return (
-    <section id="sponsors" className="relative border-t border-white/15 px-6 py-24 md:py-32 overflow-hidden">
+    <section id="sponsors" className="relative border-t border-white/15 px-6 py-24 md:py-32 overflow-x-hidden">
       {/* Puzzle accents */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src="/piece1.png" alt="" aria-hidden="true" draggable={false} className="pointer-events-none select-none absolute -right-6 top-8 w-32 opacity-15 -rotate-[10deg]" />
