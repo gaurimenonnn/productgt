@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 
 interface PieceConfig {
   id: number
@@ -34,13 +34,15 @@ const SCROLL_K = 0.08   // scroll-delta → upward velocity multiplier
 export function FloatingPieces() {
   const containerRef = useRef<HTMLDivElement>(null)
   const elRefs = useRef<(HTMLDivElement | null)[]>([])
+  const [sizeScale, setSizeScale] = useState(1)
+
+  useEffect(() => {
+    setSizeScale(window.innerWidth < 768 ? 0.55 : 1)
+  }, [])
 
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
-
-    const isMobile = window.innerWidth < 768
-    const sizeScale = isMobile ? 0.55 : 1
 
     let W = container.offsetWidth
     let H = container.offsetHeight
