@@ -22,22 +22,34 @@ const CONFIGS: PieceConfig[] = [
   { id: 5, src: "/piece5.png", size: 172, startX: 0.48, startY: 0.17, initialRotation: 185, mass: 1.1, friction: 0.990, shadow: "drop-shadow(0 2px 6px rgba(0,0,0,0.14))" },
 ]
 
-// Keep pieces below the navbar and above the section boundary
-const TOP_PAD = 82   // approx navbar height in px
+// Initial autonomous velocities for mobile (unique per piece so they don't sync up)
+const MOBILE_INIT_V = [
+  { vx:  0.6, vy:  0.4, rotV:  0.08 },
+  { vx: -0.5, vy:  0.3, rotV: -0.06 },
+  { vx:  0.4, vy: -0.5, rotV:  0.05 },
+  { vx: -0.7, vy:  0.4, rotV: -0.07 },
+  { vx:  0.5, vy: -0.3, rotV:  0.09 },
+]
 
-const BOUNCE   = 0.40   // energy kept on wall hit — soft landings
-const MAX_SPD  = 14     // px/frame cap
-const THROW    = 0.28   // mouse-swipe velocity transfer
-const HOVER_F  = 160    // push force magnitude when mouse is on piece
-const SCROLL_K = 0.08   // scroll-delta → upward velocity multiplier
+const TOP_PAD   = 82
+const BOUNCE    = 0.40
+const MAX_SPD   = 14
+const THROW     = 0.28
+const HOVER_F   = 160
+const SCROLL_K  = 0.08
+// On mobile, friction is lower so pieces keep drifting without stalling
+const MOB_FRICTION = 0.999
 
 export function FloatingPieces() {
   const containerRef = useRef<HTMLDivElement>(null)
   const elRefs = useRef<(HTMLDivElement | null)[]>([])
   const [sizeScale, setSizeScale] = useState(1)
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
-    setSizeScale(window.innerWidth < 768 ? 0.55 : 1)
+    const mobile = window.innerWidth < 768
+    setIsMobile(mobile)
+    setSizeScale(mobile ? 0.55 : 1)
   }, [])
 
   useEffect(() => {
@@ -47,17 +59,15 @@ export function FloatingPieces() {
     let W = container.offsetWidth
     let H = container.offsetHeight
 
-    // cx/cy = piece center in px, vx/vy = velocity, rot = degrees, rotV = deg/frame
-    const state = CONFIGS.map(cfg => ({
+    const state = CONFIGS.map((cfg, i) => ({
       cx:   cfg.startX * W,
       cy:   cfg.startY * H,
-      vx:   0,
-      vy:   0,
+      vx:   isMobile ? MOBILE_INIT_V[i].vx : 0,
+      vy:   isMobile ? MOBILE_INIT_V[i].vy : 0,
       rot:  cfg.initialRotation,
-      rotV: 0,
+      rotV: isMobile ? MOBILE_INIT_V[i].rotV : 0,
     }))
 
-    // Position elements correctly before first paint, then fade in
     CONFIGS.forEach((cfg, i) => {
       const el = elRefs.current[i]
       if (!el) return
@@ -97,7 +107,6 @@ export function FloatingPieces() {
 
     let rafId: number
     const tick = () => {
-      // Decay scroll impulse slowly so the drift feels gradual
       scrollVel *= 0.88
 
       CONFIGS.forEach((cfg, i) => {
@@ -105,69 +114,70 @@ export function FloatingPieces() {
         if (!el) return
         const s = state[i]
         const half = cfg.size * sizeScale / 2
+        const friction = isMobile ? MOB_FRICTION : cfg.friction
 
-        // ── Scroll inertia: scroll down → float up ─────────────────
+        // ── Scroll inertia ──────────────────────────────────────────
         s.vy -= scrollVel / cfg.mass
 
-        // ── Mouse: only when cursor is inside this piece's box ──────
-        const overX = mouse.x >= s.cx - half && mouse.x <= s.cx + half
-        const overY = mouse.y >= s.cy - half && mouse.y <= s.cy + half
+        if (!isMobile) {
+          // ── Mouse interaction (desktop only) ───────────────────────
+          const overX = mouse.x >= s.cx - half && mouse.x <= s.cx + half
+          const overY = mouse.y >= s.cy - half && mouse.y <= s.cy + half
 
-        if (overX && overY) {
-          // Direction from mouse to piece center
-          const dx   = s.cx - mouse.x
-          const dy   = s.cy - mouse.y
-          const dist = Math.sqrt(dx * dx + dy * dy) || 1
-
-          // Push force — stronger when mouse is near center
-          const proximity = 1 - dist / (half * 1.5)
-          const force = (HOVER_F * Math.max(0, proximity)) / cfg.mass * 0.016
-          s.vx += (dx / dist) * force
-          s.vy += (dy / dist) * force
-
-          // Swipe/throw: transfer mouse delta velocity to piece
-          s.vx += (mouse.dx * THROW) / cfg.mass
-          s.vy += (mouse.dy * THROW) / cfg.mass
-
-          // Spin from swipe direction
-          const tangential = mouse.dx * (dy / dist) - mouse.dy * (dx / dist)
-          s.rotV += tangential * 0.014 / cfg.mass
+          if (overX && overY) {
+            const dx   = s.cx - mouse.x
+            const dy   = s.cy - mouse.y
+            const dist = Math.sqrt(dx * dx + dy * dy) || 1
+            const proximity = 1 - dist / (half * 1.5)
+            const force = (HOVER_F * Math.max(0, proximity)) / cfg.mass * 0.016
+            s.vx += (dx / dist) * force
+            s.vy += (dy / dist) * force
+            s.vx += (mouse.dx * THROW) / cfg.mass
+            s.vy += (mouse.dy * THROW) / cfg.mass
+            const tangential = mouse.dx * (dy / dist) - mouse.dy * (dx / dist)
+            s.rotV += tangential * 0.014 / cfg.mass
+          }
+        } else {
+          // ── Mobile: nudge pieces that slow down so they never stall ─
+          const spd = Math.sqrt(s.vx * s.vx + s.vy * s.vy)
+          if (spd < 0.25) {
+            s.vx += (Math.random() - 0.5) * 0.4
+            s.vy += (Math.random() - 0.5) * 0.4
+          }
         }
 
-        // ── Per-piece friction ──────────────────────────────────────
-        s.vx   *= cfg.friction
-        s.vy   *= cfg.friction
-        s.rotV *= cfg.friction
+        // ── Friction ────────────────────────────────────────────────
+        s.vx   *= friction
+        s.vy   *= friction
+        s.rotV *= friction
 
-        // ── Speed cap ──────────────────────────────────────────────
+        // ── Speed cap ───────────────────────────────────────────────
         const spd = Math.sqrt(s.vx * s.vx + s.vy * s.vy)
         if (spd > MAX_SPD) { s.vx = s.vx / spd * MAX_SPD; s.vy = s.vy / spd * MAX_SPD }
 
-        // ── Integrate ──────────────────────────────────────────────
+        // ── Integrate ────────────────────────────────────────────────
         s.cx  += s.vx
         s.cy  += s.vy
         s.rot += s.rotV
 
-        // ── Wall bounce (center stays half-size away from each edge) ─
+        // ── Wall bounce ──────────────────────────────────────────────
         if (s.cx < half) {
-          s.cx = half; s.vx = Math.abs(s.vx) * BOUNCE; s.rotV *= -0.5
+          s.cx = half; s.vx = Math.abs(s.vx) * (isMobile ? 0.85 : BOUNCE); s.rotV *= -0.5
         } else if (s.cx > W - half) {
-          s.cx = W - half; s.vx = -Math.abs(s.vx) * BOUNCE; s.rotV *= -0.5
+          s.cx = W - half; s.vx = -Math.abs(s.vx) * (isMobile ? 0.85 : BOUNCE); s.rotV *= -0.5
         }
         if (s.cy < TOP_PAD + half) {
-          s.cy = TOP_PAD + half; s.vy = Math.abs(s.vy) * BOUNCE
+          s.cy = TOP_PAD + half; s.vy = Math.abs(s.vy) * (isMobile ? 0.85 : BOUNCE)
         } else if (s.cy > H - half) {
-          s.cy = H - half; s.vy = -Math.abs(s.vy) * BOUNCE
+          s.cy = H - half; s.vy = -Math.abs(s.vy) * (isMobile ? 0.85 : BOUNCE)
         }
 
-        // ── DOM: top-left = center − half ──────────────────────────
         el.style.transform = `translate(${s.cx - half}px, ${s.cy - half}px) rotate(${s.rot}deg)`
       })
 
       rafId = requestAnimationFrame(tick)
     }
 
-    // Remove CSS transition after fade-in so it doesn't fight the RAF loop
     const fadeTimer = setTimeout(() => {
       CONFIGS.forEach((_, i) => {
         const el = elRefs.current[i]
@@ -175,9 +185,11 @@ export function FloatingPieces() {
       })
     }, 600)
 
-    window.addEventListener("mousemove", onMouseMove, { passive: true })
-    window.addEventListener("scroll",    onScroll,    { passive: true })
-    window.addEventListener("resize",    onResize,    { passive: true })
+    if (!isMobile) {
+      window.addEventListener("mousemove", onMouseMove, { passive: true })
+    }
+    window.addEventListener("scroll",  onScroll,    { passive: true })
+    window.addEventListener("resize",  onResize,    { passive: true })
     rafId = requestAnimationFrame(tick)
 
     return () => {
@@ -187,7 +199,7 @@ export function FloatingPieces() {
       window.removeEventListener("resize",    onResize)
       cancelAnimationFrame(rafId)
     }
-  }, [])
+  }, [isMobile, sizeScale])
 
   return (
     <div
@@ -209,7 +221,7 @@ export function FloatingPieces() {
             left:       0,
             width:      cfg.size * sizeScale,
             height:     cfg.size * sizeScale,
-            opacity:    0,           // physics engine sets this on first frame
+            opacity:    0,
             willChange: "transform",
             filter:     cfg.shadow,
           }}
