@@ -6,7 +6,7 @@ const _poppins = Poppins({ subsets: ["latin"], weight: ["300", "400", "500", "60
 const _openSans = Open_Sans({ subsets: ["latin"], weight: ["700"], variable: "--font-open-sans" });
 
 export const metadata: Metadata = {
-  title: 'Product @ GT — Georgia Tech Product Club',
+  title: 'Product@GT',
   description: 'The premier product management and development club at Georgia Tech. Learn to build, ship, and scale products that matter.',
   icons: {
     icon: '/productlogo.png',
